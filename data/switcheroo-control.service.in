@@ -5,3 +5,6 @@ Description=Switcheroo Control Proxy service
 Type=dbus
 BusName=net.hadess.SwitcherooControl
 ExecStart=@sbindir@/switcheroo-control
+
+[Install]
+WantedBy=graphical.target
