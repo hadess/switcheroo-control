@@ -1,0 +1,7 @@
+[Unit]
+Description=Switcheroo Control Proxy service
+
+[Service]
+Type=dbus
+BusName=net.hadess.SwitcherooControl
+ExecStart=@sbindir@/switcheroo-control

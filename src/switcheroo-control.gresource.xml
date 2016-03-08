@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+	<gresource prefix="/net/hadess/SwitcherooControl">
+		<file preprocess="xml-stripblanks">net.hadess.SwitcherooControl.xml</file>
+	</gresource>
+</gresources>
+

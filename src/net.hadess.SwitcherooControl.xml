@@ -1,0 +1,25 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node>
+
+  <!--
+      net.hadess.SwitcherooControl:
+      @short_description: D-Bus proxy to access dual-GPU controls.
+
+      After checking the availability of two switchable GPUs in the machine,
+      check the value of net.hadess.SwitcherooControl.HasDualGpu to see
+      if running applications on the discrete GPU should be offered.
+
+      The object path will be "/net/hadess/SwitcherooControl".
+  -->
+  <interface name="net.hadess.SwitcherooControl">
+    <!--
+        HasDualGpu:
+
+        Whether two switchable GPUs are present on the system.
+    -->
+    <property name="HasDualGpu " type="b" access="read"/>
+
+  </interface>
+</node>
