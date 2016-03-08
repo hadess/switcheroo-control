@@ -19,7 +19,7 @@
 
         Whether two switchable GPUs are present on the system.
     -->
-    <property name="HasDualGpu " type="b" access="read"/>
+    <property name="HasDualGpu" type="b" access="read"/>
 
   </interface>
 </node>
