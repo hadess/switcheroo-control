@@ -25,6 +25,9 @@
 
 #define SWITCHEROO_SYSFS_PATH            "/sys/kernel/debug/vgaswitcheroo/switch"
 
+#define FORCE_INTEGRATED_CMD             "DIGD"
+#define FORCE_INTEGRATED_CMD_LEN         (strlen(FORCE_INTEGRATED_CMD))
+
 typedef struct {
 	GMainLoop *loop;
 	GDBusNodeInfo *introspection_data;
@@ -194,7 +197,7 @@ int main (int argc, char **argv)
 	}
 
 	/* And force the integrated card to be the default card */
-	ret = write (fd, "DIGD", 4);
+	ret = write (fd, FORCE_INTEGRATED_CMD, FORCE_INTEGRATED_CMD_LEN);
 	if (ret < 0) {
 		int err = errno;
 		g_warning ("could not force the integrated card on: %s",
@@ -203,7 +206,7 @@ int main (int argc, char **argv)
 	close (fd);
 
 	data = g_new0 (ControlData, 1);
-	data->available = (ret == 4);
+	data->available = (ret == FORCE_INTEGRATED_CMD_LEN);
 	setup_dbus (data);
 	data->init_done = TRUE;
 	if (data->connection)
