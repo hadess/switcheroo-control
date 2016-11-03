@@ -170,10 +170,74 @@ setup_dbus (ControlData *data)
 	return TRUE;
 }
 
+static gboolean
+parse_kernel_cmdline (gboolean *force_igpu)
+{
+	gboolean ret = TRUE;
+	GRegex *regex;
+	GMatchInfo *match;
+	char *contents;
+	char *word;
+	const char *arg;
+
+	if (!g_file_get_contents ("/proc/cmdline", &contents, NULL, NULL))
+		return FALSE;
+
+	regex = g_regex_new ("xdg.force_integrated=(\\S+)", 0, G_REGEX_MATCH_NOTEMPTY, NULL);
+	if (!g_regex_match (regex, contents, G_REGEX_MATCH_NOTEMPTY, &match))
+		goto out;
+
+	word = g_match_info_fetch (match, 0);
+	g_debug ("Found command-line match '%s'", word);
+	arg = word + strlen ("xdg.force_integrated=");
+	if (*arg == '0' || *arg == '1') {
+		*force_igpu = atoi (arg);
+	} else if (g_ascii_strcasecmp (arg, "true") == 0 ||
+		   g_ascii_strcasecmp (arg, "on") == 0) {
+		*force_igpu = TRUE;
+	} else if (g_ascii_strcasecmp (arg, "false") == 0 ||
+		   g_ascii_strcasecmp (arg, "off") == 0) {
+		*force_igpu = FALSE;
+	} else {
+		g_warning ("Invalid value '%s' for xdg.force_integrated passed in kernel command line.\n", arg);
+		ret = FALSE;
+	}
+
+	g_free (word);
+
+out:
+	g_match_info_free (match);
+	g_regex_unref (regex);
+	g_free (contents);
+
+	if (ret)
+		g_debug ("Kernel command-line parsed to %d", *force_igpu);
+
+	return ret;
+}
+
+static void
+force_integrate_card (int fd)
+{
+	int ret;
+	gboolean force_igpu;
+
+	if (!parse_kernel_cmdline (&force_igpu))
+		force_igpu = TRUE;
+	if (!force_igpu)
+		return;
+
+	ret = write (fd, FORCE_INTEGRATED_CMD, FORCE_INTEGRATED_CMD_LEN);
+	if (ret < 0) {
+		g_warning ("could not force the integrated card on: %s",
+			   g_strerror (errno));
+	}
+}
+
 int main (int argc, char **argv)
 {
 	ControlData *data;
-	int fd, ret;
+	int fd;
 
 	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
 
@@ -198,15 +262,11 @@ int main (int argc, char **argv)
 	}
 
 	/* And force the integrated card to be the default card */
-	ret = write (fd, FORCE_INTEGRATED_CMD, FORCE_INTEGRATED_CMD_LEN);
-	if (ret < 0) {
-		g_warning ("could not force the integrated card on: %s",
-			   g_strerror (errno));
-	}
+	force_integrate_card (fd);
 	close (fd);
 
 	data = g_new0 (ControlData, 1);
-	data->available = (ret == FORCE_INTEGRATED_CMD_LEN);
+	data->available = TRUE;
 	setup_dbus (data);
 	data->init_done = TRUE;
 	if (data->connection)
