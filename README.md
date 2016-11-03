@@ -30,4 +30,4 @@ Tested on
 ---------
 
 - MacBook Pro (8,2)
-
+- Thinkpad T430s
