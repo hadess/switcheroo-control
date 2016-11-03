@@ -188,7 +188,8 @@ int main (int argc, char **argv)
 			break;
 		case ENOENT:
 			g_debug ("No switcheroo support available");
-			break;
+			/* not an error */
+			return 0;
 		default:
 			g_warning ("switcheroo-control could not query vga_switcheroo status: %s",
 				   g_strerror (err));
