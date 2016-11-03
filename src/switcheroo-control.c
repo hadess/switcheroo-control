@@ -200,9 +200,8 @@ int main (int argc, char **argv)
 	/* And force the integrated card to be the default card */
 	ret = write (fd, FORCE_INTEGRATED_CMD, FORCE_INTEGRATED_CMD_LEN);
 	if (ret < 0) {
-		int err = errno;
 		g_warning ("could not force the integrated card on: %s",
-			   g_strerror (err));
+			   g_strerror (errno));
 	}
 	close (fd);
 
