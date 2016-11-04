@@ -1,3 +1,11 @@
+1.1
+---
+
+- Don't throw errors when the machine doesn't have dual-GPU
+- Add way to disable the command to force the integrated GPU
+  to be used on startup
+- Add COPYING file
+
 1.0
 ---
 
