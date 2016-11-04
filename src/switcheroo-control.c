@@ -184,8 +184,10 @@ parse_kernel_cmdline (gboolean *force_igpu)
 		return FALSE;
 
 	regex = g_regex_new ("xdg.force_integrated=(\\S+)", 0, G_REGEX_MATCH_NOTEMPTY, NULL);
-	if (!g_regex_match (regex, contents, G_REGEX_MATCH_NOTEMPTY, &match))
+	if (!g_regex_match (regex, contents, G_REGEX_MATCH_NOTEMPTY, &match)) {
+		ret = FALSE;
 		goto out;
+	}
 
 	word = g_match_info_fetch (match, 0);
 	g_debug ("Found command-line match '%s'", word);
