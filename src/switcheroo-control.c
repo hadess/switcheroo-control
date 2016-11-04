@@ -212,6 +212,8 @@ out:
 
 	if (ret)
 		g_debug ("Kernel command-line parsed to %d", *force_igpu);
+	else
+		g_debug ("Could not parse kernel command-line");
 
 	return ret;
 }
@@ -226,6 +228,8 @@ force_integrate_card (int fd)
 		force_igpu = TRUE;
 	if (!force_igpu)
 		return;
+
+	g_debug ("Forcing the integrated card as the default");
 
 	ret = write (fd, FORCE_INTEGRATED_CMD, FORCE_INTEGRATED_CMD_LEN);
 	if (ret < 0) {
