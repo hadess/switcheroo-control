@@ -220,7 +220,7 @@ static void
 force_integrate_card (int fd)
 {
 	int ret;
-	gboolean force_igpu;
+	gboolean force_igpu = FALSE;
 
 	if (!parse_kernel_cmdline (&force_igpu))
 		force_igpu = TRUE;
