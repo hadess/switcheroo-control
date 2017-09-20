@@ -3,7 +3,7 @@ switcheroo-control
 
 D-Bus service to check the availability of dual-GPU
 
-See https://developer.gnome.org/switcheroo-control/1.0/ for
+See https://developer.gnome.org/switcheroo-control/ for
 developer information.
 
 Installation
