@@ -47,12 +47,8 @@ MAINTAINERCLEANFILES =		\
 	switcheroo-control-*.txt	\
 	$(NULL)
 
-if ENABLE_GTK_DOC
 include $(top_srcdir)/gtk-doc.make
-else
-CLEANFILES = $(NULL)
 EXTRA_DIST = switcheroo-control-docs.xml
-endif
 
 CLEANFILES +=					\
 	docs-net.hadess.SwitcherooControl.xml		\
