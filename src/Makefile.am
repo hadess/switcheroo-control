@@ -8,7 +8,7 @@ switcheroo-control-resources.c: switcheroo-control.gresource.xml $(resource_file
 switcheroo-control-resources.h: switcheroo-control.gresource.xml $(resource_files)
 	$(AM_V_GEN) glib-compile-resources --target=$@ --sourcedir=$(srcdir) --generate-header --c-name switcheroo_control $<
 
-sbin_PROGRAMS = switcheroo-control
+libexec_PROGRAMS = switcheroo-control
 
 switcheroo_control_SOURCES =			\
 	switcheroo-control.c			\
