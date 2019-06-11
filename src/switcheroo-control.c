@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <gio/gio.h>
+#include <gudev/gudev.h>
 
 #include "switcheroo-control-resources.h"
 
@@ -27,6 +28,8 @@
 
 #define FORCE_INTEGRATED_CMD             "DIGD"
 #define FORCE_INTEGRATED_CMD_LEN         (strlen(FORCE_INTEGRATED_CMD))
+
+#define VGA_ARBITER_DEV_PATH             "/dev/vga_arbiter"
 
 typedef struct {
 	GMainLoop *loop;
@@ -261,15 +264,10 @@ selinux_enforcing (void)
 	return ret;
 }
 
-int main (int argc, char **argv)
+static gboolean
+init_switcheroo_debugfs (void)
 {
-	ControlData *data;
 	int fd;
-
-	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
-
-	if (selinux_enforcing ())
-		return 0;
 
 	/* Check for VGA switcheroo availability */
 	fd = open (SWITCHEROO_SYSFS_PATH, O_WRONLY);
@@ -283,17 +281,59 @@ int main (int argc, char **argv)
 		case ENOENT:
 			g_debug ("No switcheroo support available");
 			/* not an error */
-			return 0;
+			break;
 		default:
 			g_warning ("switcheroo-control could not query vga_switcheroo status: %s",
 				   g_strerror (err));
 		}
-		return 1;
+		return FALSE;
 	}
 
 	/* And force the integrated card to be the default card */
 	force_integrate_card (fd);
 	close (fd);
+
+	return TRUE;
+}
+
+static gboolean
+init_switcheroo_udev (void)
+{
+	GUdevClient *client = NULL;
+	const char * const subsystems[] = { "misc", NULL };
+	GUdevDevice *device = NULL;
+	gboolean ret = FALSE;
+
+	client = g_udev_client_new (subsystems);
+	if (client == NULL)
+		goto out;
+
+	/* Not all systems with vga_arbiter are dual-GPU systems, but
+	 * all dual-GPU systems have vga_arbiter */
+	device = g_udev_client_query_by_device_file (client,
+						    VGA_ARBITER_DEV_PATH);
+	ret = (device != NULL);
+
+out:
+	g_clear_object (&device);
+	g_clear_object (&client);
+	return ret;
+}
+
+int main (int argc, char **argv)
+{
+	ControlData *data;
+	gboolean ret;
+
+	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
+
+	if (selinux_enforcing ())
+		ret = init_switcheroo_udev ();
+	else
+		ret = init_switcheroo_debugfs ();
+
+	if (!ret)
+		return 1;
 
 	data = g_new0 (ControlData, 1);
 	data->available = TRUE;
