@@ -240,12 +240,36 @@ force_integrate_card (int fd)
 	}
 }
 
+static gboolean
+selinux_enforcing (void)
+{
+	GError *error = NULL;
+	char *out;
+	gboolean ret = FALSE;
+
+	if (!g_spawn_command_line_sync ("getenforce", &out, NULL, NULL, &error)) {
+		g_debug ("Could not execute 'getenforce': %s", error->message);
+		g_clear_error (&error);
+		return ret;
+	}
+
+	ret = (g_strcmp0 (out, "Enforcing") == 0);
+	g_debug ("getenforce status '%s' means SELinux is %s",
+		 out, ret ? "enforcing" : "not enforcing");
+	g_free (out);
+
+	return ret;
+}
+
 int main (int argc, char **argv)
 {
 	ControlData *data;
 	int fd;
 
 	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
+
+	if (selinux_enforcing ())
+		return 0;
 
 	/* Check for VGA switcheroo availability */
 	fd = open (SWITCHEROO_SYSFS_PATH, O_WRONLY);
