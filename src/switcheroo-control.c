@@ -240,6 +240,8 @@ force_integrate_card (int fd)
 	if (ret < 0) {
 		g_warning ("could not force the integrated card on: %s",
 			   g_strerror (errno));
+	} else {
+		g_debug ("Forced the integrated card as the default successfully");
 	}
 }
 
