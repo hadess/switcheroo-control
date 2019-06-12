@@ -246,27 +246,6 @@ force_integrate_card (int fd)
 }
 
 static gboolean
-selinux_enforcing (void)
-{
-	GError *error = NULL;
-	char *out;
-	gboolean ret = FALSE;
-
-	if (!g_spawn_command_line_sync ("getenforce", &out, NULL, NULL, &error)) {
-		g_debug ("Could not execute 'getenforce': %s", error->message);
-		g_clear_error (&error);
-		return ret;
-	}
-
-	ret = (g_strcmp0 (out, "Enforcing") == 0);
-	g_debug ("getenforce status '%s' means SELinux is %s",
-		 out, ret ? "enforcing" : "not enforcing");
-	g_free (out);
-
-	return ret;
-}
-
-static gboolean
 init_switcheroo_debugfs (void)
 {
 	int fd;
@@ -277,12 +256,17 @@ init_switcheroo_debugfs (void)
 		int err = errno;
 
 		switch (err) {
+		case EPERM:
+			/* SecureBoot enabled? */
+			g_debug ("debugfs not accessible, skip");
+			return TRUE;
 		case EACCES:
 			g_warning ("switcheroo-control needs to run as root");
 			break;
 		case ENOENT:
-			g_debug ("No switcheroo support available");
-			/* not an error */
+			/* we checked for it being available already, so it's
+			 * an error if it isn't */
+			g_warning ("No switcheroo support available");
 			break;
 		default:
 			g_warning ("switcheroo-control could not query vga_switcheroo status: %s",
@@ -325,16 +309,15 @@ out:
 int main (int argc, char **argv)
 {
 	ControlData *data;
-	gboolean ret;
 
 	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
 
-	if (selinux_enforcing ())
-		ret = init_switcheroo_udev ();
-	else
-		ret = init_switcheroo_debugfs ();
+	if (!init_switcheroo_udev ()) {
+		g_debug ("No switcheroo support available");
+		return 0;
+	}
 
-	if (!ret)
+	if (!init_switcheroo_debugfs ())
 		return 1;
 
 	data = g_new0 (ControlData, 1);
