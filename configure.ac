@@ -30,7 +30,7 @@ if test x$with_systemdsystemunitdir != xno; then
 	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 fi
 
-PKG_CHECK_MODULES(SWITCHEROO_CONTROL, gio-2.0 gudev-1.0)
+PKG_CHECK_MODULES(SWITCHEROO_CONTROL, gio-2.0)
 
 AC_PATH_PROG([GDBUS_CODEGEN],[gdbus-codegen])
 

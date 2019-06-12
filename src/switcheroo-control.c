@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <gio/gio.h>
-#include <gudev/gudev.h>
 
 #include "switcheroo-control-resources.h"
 
@@ -28,8 +27,6 @@
 
 #define FORCE_INTEGRATED_CMD             "DIGD"
 #define FORCE_INTEGRATED_CMD_LEN         (strlen(FORCE_INTEGRATED_CMD))
-
-#define VGA_ARBITER_DEV_PATH             "/dev/vga_arbiter"
 
 typedef struct {
 	GMainLoop *loop;
@@ -245,10 +242,12 @@ force_integrate_card (int fd)
 	}
 }
 
-static gboolean
-init_switcheroo_debugfs (void)
+int main (int argc, char **argv)
 {
+	ControlData *data;
 	int fd;
+
+	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
 
 	/* Check for VGA switcheroo availability */
 	fd = open (SWITCHEROO_SYSFS_PATH, O_WRONLY);
@@ -256,69 +255,23 @@ init_switcheroo_debugfs (void)
 		int err = errno;
 
 		switch (err) {
-		case EPERM:
-			/* SecureBoot enabled? */
-			g_debug ("debugfs not accessible, skip");
-			return TRUE;
 		case EACCES:
 			g_warning ("switcheroo-control needs to run as root");
 			break;
 		case ENOENT:
-			/* we checked for it being available already, so it's
-			 * an error if it isn't */
-			g_warning ("No switcheroo support available");
-			break;
+			g_debug ("No switcheroo support available");
+			/* not an error */
+			return 0;
 		default:
 			g_warning ("switcheroo-control could not query vga_switcheroo status: %s",
 				   g_strerror (err));
 		}
-		return FALSE;
+		return 1;
 	}
 
 	/* And force the integrated card to be the default card */
 	force_integrate_card (fd);
 	close (fd);
-
-	return TRUE;
-}
-
-static gboolean
-init_switcheroo_udev (void)
-{
-	GUdevClient *client = NULL;
-	const char * const subsystems[] = { "misc", NULL };
-	GUdevDevice *device = NULL;
-	gboolean ret = FALSE;
-
-	client = g_udev_client_new (subsystems);
-	if (client == NULL)
-		goto out;
-
-	/* Not all systems with vga_arbiter are dual-GPU systems, but
-	 * all dual-GPU systems have vga_arbiter */
-	device = g_udev_client_query_by_device_file (client,
-						    VGA_ARBITER_DEV_PATH);
-	ret = (device != NULL);
-
-out:
-	g_clear_object (&device);
-	g_clear_object (&client);
-	return ret;
-}
-
-int main (int argc, char **argv)
-{
-	ControlData *data;
-
-	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
-
-	if (!init_switcheroo_udev ()) {
-		g_debug ("No switcheroo support available");
-		return 0;
-	}
-
-	if (!init_switcheroo_debugfs ())
-		return 1;
 
 	data = g_new0 (ControlData, 1);
 	data->available = TRUE;
