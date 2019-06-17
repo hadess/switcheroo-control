@@ -250,28 +250,27 @@ int main (int argc, char **argv)
 	/* g_setenv ("G_MESSAGES_DEBUG", "all", TRUE); */
 
 	/* Check for VGA switcheroo availability */
-	fd = open (SWITCHEROO_SYSFS_PATH, O_WRONLY);
-	if (fd < 0) {
-		int err = errno;
-
-		switch (err) {
-		case EACCES:
-			g_warning ("switcheroo-control needs to run as root");
-			break;
-		case ENOENT:
-			g_debug ("No switcheroo support available");
-			/* not an error */
-			return 0;
-		default:
-			g_warning ("switcheroo-control could not query vga_switcheroo status: %s",
-				   g_strerror (err));
-		}
-		return 1;
+	if (!g_file_test (SWITCHEROO_SYSFS_PATH, G_FILE_TEST_IS_REGULAR)) {
+		g_debug ("No switcheroo support available");
+		return 0;
 	}
 
-	/* And force the integrated card to be the default card */
-	force_integrate_card (fd);
-	close (fd);
+	/* Try to force the integrated card to be the default card */
+	fd = open (SWITCHEROO_SYSFS_PATH, O_WRONLY);
+	if (fd > 0) {
+		force_integrate_card (fd);
+		close (fd);
+	} else {
+		int err = errno;
+
+		if (err != EPERM) {
+			g_warning ("switcheroo-control could not query vga_switcheroo status: %s",
+				   g_strerror (err));
+			return 1;
+		}
+
+		g_debug ("SecureBoot mode, can't force integrated card");
+	}
 
 	data = g_new0 (ControlData, 1);
 	data->available = TRUE;
